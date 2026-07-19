@@ -165,8 +165,14 @@ export default function App() {
         stopSpeaking()
         await start()
         setStatus('listening')
-      } catch {
-        setError('Microphone unavailable — you can still type below.')
+      } catch (err) {
+        const msg =
+          err?.name === 'NotAllowedError'
+            ? 'Microphone blocked — click the lock icon in the address bar, allow the microphone, then try again.'
+            : err?.name === 'NotFoundError'
+              ? 'No microphone found on this device — you can still type below.'
+              : `Mic error: ${err?.message || err} — you can still type below.`
+        setError(msg)
       }
     }
   }

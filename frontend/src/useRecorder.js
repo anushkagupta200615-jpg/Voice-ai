@@ -1,6 +1,15 @@
 import { useRef, useState } from 'react'
 
-// Push-to-talk recorder: start() on press, stop() resolves with a webm blob.
+// Pick the first recording format this browser supports. Chrome/Edge/Firefox
+// use webm; Safari and iPhones only support mp4 — hardcoding webm breaks them.
+const CANDIDATES = [
+  'audio/webm;codecs=opus',
+  'audio/webm',
+  'audio/mp4',
+  'audio/ogg;codecs=opus',
+]
+
+// Push-to-talk recorder: start() on press, stop() resolves with an audio blob.
 export function useRecorder() {
   const [recording, setRecording] = useState(false)
   const recorderRef = useRef(null)
@@ -8,7 +17,12 @@ export function useRecorder() {
 
   async function start() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+    const mimeType = CANDIDATES.find(
+      (t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t),
+    )
+    const recorder = mimeType
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream)
     chunksRef.current = []
     recorder.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data)
     recorder.start()
@@ -23,7 +37,8 @@ export function useRecorder() {
       recorder.onstop = () => {
         recorder.stream.getTracks().forEach((t) => t.stop())
         setRecording(false)
-        resolve(new Blob(chunksRef.current, { type: 'audio/webm' }))
+        const type = recorder.mimeType || 'audio/webm'
+        resolve(new Blob(chunksRef.current, { type }))
       }
       recorder.stop()
     })

@@ -26,8 +26,11 @@ export async function sendChat(message, sessionId) {
 }
 
 export async function transcribe(audioBlob) {
+  // Name the file by its real format (webm on Chrome, mp4 on Safari/iPhone)
+  // so the STT provider decodes it correctly.
+  const ext = (audioBlob.type.match(/audio\/(\w+)/) || [null, 'webm'])[1]
   const form = new FormData()
-  form.append('audio', audioBlob, 'recording.webm')
+  form.append('audio', audioBlob, `recording.${ext}`)
   const resp = await fetch('/api/stt', { method: 'POST', body: form })
   const { text } = await jsonOrThrow(resp)
   return text

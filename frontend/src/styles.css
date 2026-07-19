@@ -26,6 +26,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* phones: real visible height, accounts for browser bars */
   max-width: 660px;
   margin-left: max(24px, calc(50vw - 620px));
   z-index: 1;
@@ -111,6 +112,7 @@ body {
 /* ── Header ─────────────────────────────────────────────── */
 header {
   display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 8px;
   padding: 16px 4px 12px;
 }
 .brand { display: flex; align-items: baseline; gap: 9px; }
@@ -136,6 +138,7 @@ header {
   background: var(--panel); color: var(--text);
   border: 1px solid var(--panel-border); border-radius: 9px;
   padding: 7px 10px; font-size: 13px; outline: none; cursor: pointer;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 .voice-select option { background: #161624; }
@@ -171,6 +174,7 @@ header {
   line-height: 1.5; font-size: 14.5px;
   white-space: pre-wrap; word-wrap: break-word;
   animation: slideUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
 .bubble.user {
@@ -216,7 +220,9 @@ header {
 .status-pill {
   padding: 6px 14px; border-radius: 20px; font-size: 12.5px;
   background: var(--panel); border: 1px solid var(--panel-border);
-  color: var(--muted); backdrop-filter: blur(10px);
+  color: var(--muted);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   animation: fadeIn 0.25s ease both;
 }
 .status-pill.listening { color: #ff8fa8; border-color: rgba(255, 107, 139, 0.4); }
@@ -228,7 +234,9 @@ header {
   border: 1px solid rgba(255, 107, 139, 0.55);
   background: linear-gradient(135deg, rgba(255, 107, 139, 0.25), rgba(214, 51, 108, 0.25));
   color: #ff8fa8; font-size: 12.5px; font-weight: 600;
-  cursor: pointer; backdrop-filter: blur(10px);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   animation: fadeIn 0.25s ease both, pulse 1.6s infinite;
 }
 .stop-btn:hover {
@@ -244,8 +252,10 @@ footer form { display: flex; flex: 1; gap: 10px; }
 footer input {
   flex: 1; padding: 13px 17px; border-radius: 14px;
   border: 1px solid var(--panel-border);
-  background: var(--panel); color: var(--text); font-size: 15px; outline: none;
+  background: var(--panel); color: var(--text); outline: none;
+  font-size: 16px; /* 16px minimum stops iPhones auto-zooming on focus */
   transition: border-color 0.25s, box-shadow 0.25s;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
 footer input:focus {
@@ -269,7 +279,9 @@ footer button[type="submit"]:disabled { opacity: 0.35; cursor: default; }
 .mic {
   width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--panel-border);
   background: var(--panel); color: var(--text); cursor: pointer; flex-shrink: 0;
-  display: grid; place-items: center; backdrop-filter: blur(12px);
+  display: grid; place-items: center;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   transition: transform 0.15s, background 0.3s, box-shadow 0.3s;
 }
 .mic:hover:not(:disabled) { transform: scale(1.06); box-shadow: 0 0 18px rgba(168, 107, 255, 0.3); }
@@ -287,17 +299,24 @@ footer button[type="submit"]:disabled { opacity: 0.35; cursor: default; }
 
 /* ── Responsive: she moves behind the chat on small screens ─ */
 @media (max-width: 1000px) {
-  .app { max-width: none; margin: 0 auto; padding: 0 18px; }
+  .app { max-width: none; margin: 0 auto; padding: 0 16px; }
   .anime-girl {
-    right: 50%; transform: translateX(50%);
-    height: 88vh; opacity: 0.3;
+    /* center with `translate` (a separate property), NOT `transform` —
+       the floaty/tilt animations overwrite transform every frame and
+       would fling her off-center */
+    left: 50%; right: auto; translate: -50% 0;
+    height: 80vh; height: 80dvh; opacity: 0.25;
     pointer-events: none;
+    animation: none;
   }
-  .anime-girl.stoppable { pointer-events: auto; }
   .anime-girl.thinking { animation: none; }
+  .anime-girl.stoppable { pointer-events: auto; }
+  .status-bar { min-height: 30px; }
 }
 @media (max-width: 520px) {
   .brand-sub { display: none; }
   .controls { gap: 8px; }
-  .voice-select { max-width: 150px; }
+  .voice-select { max-width: 160px; }
+  .bubble { max-width: 92%; }
+  footer { gap: 8px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 }
