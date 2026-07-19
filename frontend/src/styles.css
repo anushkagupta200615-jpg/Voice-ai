@@ -1,0 +1,311 @@
+* { box-sizing: border-box; margin: 0; }
+
+:root {
+  --bg: #0a0a12;
+  --panel: rgba(24, 20, 44, 0.55);
+  --panel-border: rgba(255, 255, 255, 0.1);
+  --text: #eef0f6;
+  --muted: #a7acbf;
+  --accent: #a86bff;
+  --accent-2: #ff6bcb;
+  --accent-3: #5b8cff;
+  --user: linear-gradient(135deg, #4c5fd6, #7048c9);
+  --error: #ff6b6b;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  overflow: hidden;
+}
+
+/* Chat column sits on the left; Aria fills the right/background */
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 660px;
+  margin-left: max(24px, calc(50vw - 620px));
+  z-index: 1;
+}
+
+/* Ambient animated background */
+.bg-gradient {
+  position: fixed;
+  inset: -30%;
+  background:
+    radial-gradient(40% 35% at 30% 25%, rgba(168, 107, 255, 0.18), transparent 70%),
+    radial-gradient(35% 30% at 75% 65%, rgba(255, 107, 203, 0.12), transparent 70%),
+    radial-gradient(45% 40% at 55% 30%, rgba(91, 140, 255, 0.12), transparent 70%),
+    radial-gradient(6px 6px at 80% 20%, rgba(140, 200, 255, 0.5), transparent 60%),
+    radial-gradient(5px 5px at 88% 55%, rgba(168, 107, 255, 0.45), transparent 60%),
+    radial-gradient(4px 4px at 70% 80%, rgba(255, 107, 203, 0.4), transparent 60%),
+    radial-gradient(5px 5px at 92% 35%, rgba(255, 255, 255, 0.3), transparent 60%);
+  animation: drift 18s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes drift {
+  from { transform: translate(-2%, -2%) rotate(0deg); }
+  to   { transform: translate(2%, 3%) rotate(4deg); }
+}
+
+/* ── Aria: full-screen background character ─────────────── */
+.anime-girl {
+  position: fixed;
+  bottom: 0;
+  right: max(1vw, calc(50vw - 760px));
+  height: min(94vh, 980px);
+  z-index: 0;
+  filter: drop-shadow(0 0 46px rgba(168, 107, 255, 0.28));
+  transition: filter 0.4s;
+  animation: floaty 5.5s ease-in-out infinite;
+}
+.anime-girl.stoppable { cursor: pointer; pointer-events: auto; }
+.anime-girl.speaking { filter: drop-shadow(0 0 60px rgba(168, 107, 255, 0.5)); }
+.anime-girl.listening { filter: drop-shadow(0 0 60px rgba(255, 107, 139, 0.45)); }
+.anime-girl.thinking { animation: headTilt 1.9s ease-in-out infinite; }
+
+.anime-photo {
+  max-width: 44vw; object-fit: contain; object-position: bottom;
+  border-radius: 24px 24px 0 0;
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+@keyframes headTilt {
+  0%, 100% { transform: rotate(-1.2deg); }
+  50% { transform: rotate(1.2deg); }
+}
+
+/* her animated parts */
+.anime-girl .eye {
+  transform-box: fill-box; transform-origin: center;
+  animation: blink 4.5s infinite;
+}
+.anime-girl .mouth-talk {
+  transform-box: fill-box; transform-origin: center;
+  animation: talk 0.32s ease-in-out infinite alternate;
+}
+.anime-girl .arm {
+  transform-box: fill-box; transform-origin: 70% 100%;
+}
+.anime-girl .arm.gesturing { animation: gesture 0.95s ease-in-out infinite; }
+.anime-girl .mic-tip { opacity: 0.85; }
+.anime-girl.speaking .mic-tip,
+.anime-girl.listening .mic-tip { animation: micGlow 0.9s ease-in-out infinite alternate; }
+
+@keyframes blink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.06); }
+}
+@keyframes talk {
+  from { transform: scaleY(0.3); }
+  to { transform: scaleY(1); }
+}
+@keyframes gesture {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50% { transform: rotate(9deg) translateY(-4px); }
+}
+@keyframes micGlow {
+  from { opacity: 0.6; }
+  to { opacity: 1; filter: drop-shadow(0 0 8px #a86bff); }
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 4px 12px;
+}
+.brand { display: flex; align-items: baseline; gap: 9px; }
+.brand-dot {
+  width: 9px; height: 9px; border-radius: 50%; align-self: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 12px var(--accent);
+  animation: breathe 3s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+.brand h1 {
+  font-size: 21px; font-weight: 650; letter-spacing: 0.3px;
+  background: linear-gradient(90deg, #fff, #cfc3ff);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand-sub { font-size: 12px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
+
+.controls { display: flex; align-items: center; gap: 14px; }
+.voice-select {
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--panel-border); border-radius: 9px;
+  padding: 7px 10px; font-size: 13px; outline: none; cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+.voice-select option { background: #161624; }
+
+.voice-toggle {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; color: var(--muted); cursor: pointer; user-select: none;
+}
+.voice-toggle input { display: none; }
+.switch {
+  width: 34px; height: 19px; border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14); position: relative;
+  transition: background 0.25s;
+}
+.switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 15px; height: 15px; border-radius: 50%;
+  background: #fff; transition: transform 0.25s;
+}
+.voice-toggle input:checked + .switch { background: var(--accent); }
+.voice-toggle input:checked + .switch::after { transform: translateX(15px); }
+
+/* ── Transcript ─────────────────────────────────────────── */
+.transcript {
+  flex: 1; overflow-y: auto; padding: 10px 4px;
+  display: flex; flex-direction: column; gap: 10px;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.hint { color: var(--muted); text-align: center; margin-top: 46px; font-size: 15px; }
+
+.bubble {
+  max-width: 85%; padding: 11px 15px; border-radius: 16px;
+  line-height: 1.5; font-size: 14.5px;
+  white-space: pre-wrap; word-wrap: break-word;
+  animation: slideUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  backdrop-filter: blur(12px);
+}
+.bubble.user {
+  align-self: flex-end; background: var(--user);
+  border-bottom-right-radius: 5px;
+  box-shadow: 0 4px 16px rgba(76, 95, 214, 0.3);
+}
+.bubble.assistant {
+  align-self: flex-start;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-bottom-left-radius: 5px;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Typing indicator bubble */
+.bubble.typing { display: flex; gap: 5px; padding: 15px 17px; }
+.bubble.typing span {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--muted);
+  animation: bounce 1.1s ease-in-out infinite;
+}
+.bubble.typing span:nth-child(2) { animation-delay: 0.18s; }
+.bubble.typing span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(-6px); opacity: 1; }
+}
+
+.error {
+  color: var(--error); font-size: 13px; text-align: center;
+  animation: fadeIn 0.3s ease both;
+}
+
+/* ── Status bar (pill + stop button) ────────────────────── */
+.status-bar {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 34px; padding: 2px 4px;
+}
+.status-pill {
+  padding: 6px 14px; border-radius: 20px; font-size: 12.5px;
+  background: var(--panel); border: 1px solid var(--panel-border);
+  color: var(--muted); backdrop-filter: blur(10px);
+  animation: fadeIn 0.25s ease both;
+}
+.status-pill.listening { color: #ff8fa8; border-color: rgba(255, 107, 139, 0.4); }
+.status-pill.speaking { color: #c9a8ff; border-color: rgba(168, 107, 255, 0.4); }
+
+.stop-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid rgba(255, 107, 139, 0.55);
+  background: linear-gradient(135deg, rgba(255, 107, 139, 0.25), rgba(214, 51, 108, 0.25));
+  color: #ff8fa8; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; backdrop-filter: blur(10px);
+  animation: fadeIn 0.25s ease both, pulse 1.6s infinite;
+}
+.stop-btn:hover {
+  background: linear-gradient(135deg, #ff6b8b, #d6336c);
+  color: #fff;
+}
+
+/* ── Footer / input row ─────────────────────────────────── */
+footer {
+  display: flex; gap: 12px; padding: 8px 4px 22px; align-items: center;
+}
+footer form { display: flex; flex: 1; gap: 10px; }
+footer input {
+  flex: 1; padding: 13px 17px; border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel); color: var(--text); font-size: 15px; outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  backdrop-filter: blur(12px);
+}
+footer input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(168, 107, 255, 0.18);
+}
+footer input::placeholder { color: var(--muted); }
+
+footer button[type="submit"] {
+  width: 46px; border-radius: 13px; border: none;
+  background: linear-gradient(135deg, var(--accent-3), var(--accent));
+  color: white; cursor: pointer; display: grid; place-items: center;
+  transition: transform 0.15s, box-shadow 0.25s;
+}
+footer button[type="submit"]:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(168, 107, 255, 0.35);
+}
+footer button[type="submit"]:disabled { opacity: 0.35; cursor: default; }
+
+.mic {
+  width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--panel-border);
+  background: var(--panel); color: var(--text); cursor: pointer; flex-shrink: 0;
+  display: grid; place-items: center; backdrop-filter: blur(12px);
+  transition: transform 0.15s, background 0.3s, box-shadow 0.3s;
+}
+.mic:hover:not(:disabled) { transform: scale(1.06); box-shadow: 0 0 18px rgba(168, 107, 255, 0.3); }
+.mic.recording {
+  background: linear-gradient(135deg, #ff6b8b, #d6336c);
+  border-color: transparent;
+  animation: pulse 1.2s infinite;
+}
+.mic:disabled { opacity: 0.4; cursor: default; }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 139, 0.55); }
+  50% { box-shadow: 0 0 0 12px rgba(255, 107, 139, 0); }
+}
+
+/* ── Responsive: she moves behind the chat on small screens ─ */
+@media (max-width: 1000px) {
+  .app { max-width: none; margin: 0 auto; padding: 0 18px; }
+  .anime-girl {
+    right: 50%; transform: translateX(50%);
+    height: 88vh; opacity: 0.3;
+    pointer-events: none;
+  }
+  .anime-girl.stoppable { pointer-events: auto; }
+  .anime-girl.thinking { animation: none; }
+}
+@media (max-width: 520px) {
+  .brand-sub { display: none; }
+  .controls { gap: 8px; }
+  .voice-select { max-width: 150px; }
+}

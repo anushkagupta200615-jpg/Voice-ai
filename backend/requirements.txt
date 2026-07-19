@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+httpx
+langchain>=1.0
+langgraph
+langchain-groq
+edge-tts
+ddgs
+# Optional LLM providers — uncomment what you use:
+# langchain-anthropic
+# langchain-openai

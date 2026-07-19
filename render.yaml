@@ -1,0 +1,23 @@
+# Render Blueprint — deploys the whole app as one Docker web service.
+# In the Render dashboard: New → Blueprint → point at this repo. Then set
+# the GROQ_API_KEY secret (it is intentionally not stored in this file).
+services:
+  - type: web
+    name: aria-voice-agent
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false                       # set this secret in the dashboard
+      - key: LLM_MODEL
+        value: groq:openai/gpt-oss-120b
+      - key: STT_PROVIDER
+        value: groq
+      - key: TTS_PROVIDER
+        value: edge
+      - key: EDGE_TTS_VOICE
+        value: en-IN-NeerjaNeural
+      - key: AGENT_PLUGIN
+        value: demo
