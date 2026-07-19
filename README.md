@@ -13,6 +13,83 @@ Mic audio → STT → text → LangGraph agent (tools + memory) → reply → TT
                     text chat UI uses the same agent
 ```
 
+## Tech Stack
+
+| Layer | Technology | Why |
+|---|---|---|
+| **Frontend** | React 18 + Vite | Fast dev server, tiny production build |
+| **UI / Avatar** | Hand-drawn SVG + CSS animations | Animated anime assistant (blink, lip-sync, head tilt) with zero image assets |
+| **Mic capture** | Web Audio API (`MediaRecorder`) | Push-to-talk recording in the browser, no plugins |
+| **Backend API** | FastAPI (Python) + Uvicorn | Async endpoints, serves the built frontend too |
+| **Agent framework** | LangChain 1.x + LangGraph | Tool-calling agent with per-session memory (`InMemorySaver`) |
+| **LLM** | `openai/gpt-oss-120b` via Groq | Free tier, very fast inference, reliable tool calling |
+| **STT** (speech→text) | Whisper `large-v3-turbo` via Groq | Same free API key as the LLM, auto language detection |
+| **TTS** (text→speech) | Microsoft Edge TTS | Free, no key, natural voices incl. Hindi & Indian English |
+| **Agent tools** | DuckDuckGo search (`ddgs`), calculator, clock | Live info without any paid search API |
+| **Deployment** | Docker (multi-stage) on Render | One service = API + UI, HTTPS so the mic works |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Browser["Browser (React + Vite)"]
+        MIC["🎤 Push-to-talk<br/>(MediaRecorder)"]
+        CHAT["💬 Chat UI"]
+        AVATAR["Animated SVG avatar"]
+        AUDIO["🔊 Audio playback<br/>(sentence-pipelined)"]
+    end
+
+    subgraph Server["FastAPI (one Docker service)"]
+        STT["/api/stt<br/>STT provider"]
+        AGENT["/api/chat<br/>LangGraph agent"]
+        TTS["/api/tts<br/>TTS provider"]
+        MEM[("Session memory<br/>per session_id")]
+        TOOLS["Tools: web_search,<br/>calculator, datetime"]
+    end
+
+    subgraph Providers["External providers (env-swappable)"]
+        GROQ["Groq<br/>LLM + Whisper"]
+        EDGE["Edge TTS<br/>(free)"]
+        DDG["DuckDuckGo"]
+    end
+
+    MIC -->|audio blob| STT -->|text| CHAT
+    CHAT -->|message| AGENT -->|reply| CHAT
+    CHAT --> TTS -->|MP3| AUDIO --> AVATAR
+    AGENT <--> MEM
+    AGENT <--> TOOLS
+    STT --> GROQ
+    AGENT --> GROQ
+    TOOLS --> DDG
+    TTS --> EDGE
+```
+
+**Design principle:** every layer is behind an interface chosen by an env
+var, so any piece (LLM, STT, TTS, domain tools) swaps without touching the
+rest. The agent core (`backend/voice_core/`) has no dependency on FastAPI
+or the UI — it can be dropped into any Python project.
+
+### Project structure
+
+```
+├── backend/
+│   ├── app.py                  # FastAPI: /api/chat, /api/stt, /api/tts (+ serves UI)
+│   └── voice_core/             # portable core — no web-framework dependency
+│       ├── agent.py            # LangGraph agent + memory + retry
+│       ├── stt.py              # STT providers (Groq Whisper, Deepgram)
+│       ├── tts.py              # TTS providers (Edge, ElevenLabs)
+│       ├── config.py           # all env-driven settings
+│       └── plugins/demo.py     # persona + tools (copy per hackathon theme)
+├── frontend/
+│   └── src/
+│       ├── App.jsx             # chat, push-to-talk, status, playback pipeline
+│       ├── AnimeGirl.jsx       # the animated SVG assistant
+│       ├── api.js              # only file that talks to the backend
+│       └── useRecorder.js      # MediaRecorder hook
+├── Dockerfile                  # multi-stage: build UI → run API serving both
+└── render.yaml                 # Render blueprint (one-click deploy)
+```
+
 ## Quick start
 
 **1. Configure** — copy `.env.example` to `.env` and set at minimum
