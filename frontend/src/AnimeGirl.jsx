@@ -141,15 +141,6 @@ export default function AnimeGirl({ status, onStop }) {
       <circle cx="292" cy="202" r="5" fill="#a86bff" opacity="0.8" />
       <path d="M294 222 Q306 274 254 288" stroke="#2b2140" strokeWidth="6" fill="none" strokeLinecap="round" />
       <circle className="mic-tip" cx="248" cy="290" r="8" fill="#a86bff" />
-
-      {/* ── gesturing arm (front) ─────────────────────────── */}
-      <g className={`arm ${speaking ? 'gesturing' : ''}`}>
-        <path d="M306 620 Q332 520 286 458" stroke="#6a45b8" strokeWidth="34" fill="none" strokeLinecap="round" />
-        <circle cx="286" cy="456" r="17" fill="#53348f" />
-        <circle cx="280" cy="434" r="16" fill="#ffe3d0" />
-        <path d="M268 424 q-2 -12 3 -15 M278 419 q0 -13 5 -14 M288 421 q3 -11 8 -10 M295 428 q6 -7 10 -4"
-          stroke="#ffe3d0" strokeWidth="5" fill="none" strokeLinecap="round" />
-      </g>
     </svg>
   )
 }

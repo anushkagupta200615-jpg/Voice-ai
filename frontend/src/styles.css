@@ -91,10 +91,6 @@ body {
   transform-box: fill-box; transform-origin: center;
   animation: talk 0.32s ease-in-out infinite alternate;
 }
-.anime-girl .arm {
-  transform-box: fill-box; transform-origin: 70% 100%;
-}
-.anime-girl .arm.gesturing { animation: gesture 0.95s ease-in-out infinite; }
 .anime-girl .mic-tip { opacity: 0.85; }
 .anime-girl.speaking .mic-tip,
 .anime-girl.listening .mic-tip { animation: micGlow 0.9s ease-in-out infinite alternate; }
@@ -106,10 +102,6 @@ body {
 @keyframes talk {
   from { transform: scaleY(0.3); }
   to { transform: scaleY(1); }
-}
-@keyframes gesture {
-  0%, 100% { transform: rotate(-4deg) translateY(0); }
-  50% { transform: rotate(9deg) translateY(-4px); }
 }
 @keyframes micGlow {
   from { opacity: 0.6; }
