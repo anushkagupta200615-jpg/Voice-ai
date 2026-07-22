@@ -28,7 +28,8 @@ export default function App() {
   const [voice, setVoice] = useState(VOICES[0].id)
   const [error, setError] = useState('')
   const sessionRef = useRef('default')
-  const audioRef = useRef(null)
+  const audioRef = useRef(null)      // the single reusable <audio> player
+  const unlockedRef = useRef(false)  // has audio been unlocked by a tap yet?
   const bottomRef = useRef(null)
   const playGenRef = useRef(0) // bumped to cancel an in-flight playback pipeline
   const voiceRef = useRef(voice)
@@ -37,7 +38,25 @@ export default function App() {
 
   useEffect(() => {
     newSession().then((id) => { sessionRef.current = id }).catch(() => {})
+    // One persistent audio element, reused for every reply. Creating a fresh
+    // `new Audio()` per reply can't be played on phones (not tied to a tap).
+    audioRef.current = new Audio()
+    audioRef.current.preload = 'auto'
   }, [])
+
+  // Phones block audio that isn't started by a user gesture. Call this inside
+  // a tap (mic / send) to "bless" our audio element so later replies can play.
+  const SILENT =
+    'data:audio/wav;base64,UklGRiwAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQgAAAAAAAAAAAAAAA=='
+  function unlockAudio() {
+    try { speechSynthesis.resume() } catch { /* ignore */ }
+    const el = audioRef.current
+    if (!el || unlockedRef.current) return
+    el.src = SILENT
+    el.play().then(() => {
+      el.pause(); el.currentTime = 0; unlockedRef.current = true
+    }).catch(() => { /* will retry on next tap */ })
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -49,8 +68,8 @@ export default function App() {
 
   function stopSpeaking() {
     playGenRef.current++ // cancels the playback pipeline
-    audioRef.current?.pause()
-    audioRef.current = null
+    const el = audioRef.current
+    if (el) { el.pause(); el.removeAttribute('src'); el.load() }
     speechSynthesis.cancel()
     setStatus((s) => (s === 'speaking' ? 'idle' : s))
   }
@@ -72,12 +91,13 @@ export default function App() {
 
   function playUrl(url) {
     return new Promise((resolve) => {
-      const audio = new Audio(url)
-      audioRef.current = audio
-      audio.onended = resolve
-      audio.onpause = resolve // user stopped playback
-      audio.onerror = resolve
-      audio.play().catch(resolve)
+      const el = audioRef.current
+      if (!el) return resolve()
+      el.onended = resolve
+      el.onpause = resolve // user stopped playback
+      el.onerror = resolve
+      el.src = url
+      el.play().catch(resolve)
     })
   }
 
@@ -106,7 +126,6 @@ export default function App() {
       })
     } finally {
       if (playGenRef.current === gen) {
-        audioRef.current = null
         setStatus((s) => (s === 'speaking' ? 'idle' : s))
       }
     }
@@ -131,12 +150,14 @@ export default function App() {
     e.preventDefault()
     const text = input.trim()
     if (!text || status !== 'idle') return
+    unlockAudio() // within the tap, so her reply can play on phones
     setInput('')
     await handleTurn(text)
   }
 
   async function handleMic() {
     setError('')
+    unlockAudio() // within the tap, so her reply can play on phones
     if (status === 'speaking') {
       // First tap while she's talking just stops the audio.
       stopSpeaking()
