@@ -12,7 +12,7 @@ import os
 import time
 import uuid
 
-from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi import FastAPI, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -74,12 +74,14 @@ async def chat(req: ChatRequest):
 
 
 @app.post("/api/stt")
-async def transcribe(audio: UploadFile):
+async def transcribe(audio: UploadFile, language: str | None = Form(None)):
     data = await audio.read()
     if not data:
         raise HTTPException(400, "Empty audio")
     try:
-        text = await stt.get_stt().transcribe(data, audio.content_type or "audio/webm")
+        text = await stt.get_stt().transcribe(
+            data, audio.content_type or "audio/webm", language=language
+        )
     except Exception as e:
         log.exception("stt error")
         raise HTTPException(502, f"STT error: {e}")

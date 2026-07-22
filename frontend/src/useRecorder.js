@@ -9,24 +9,36 @@ const CANDIDATES = [
   'audio/ogg;codecs=opus',
 ]
 
-// Push-to-talk recorder: start() on press, stop() resolves with an audio blob.
+// Push-to-talk recorder: start() resolves once recording has truly begun,
+// stop() resolves with an audio blob.
 export function useRecorder() {
   const [recording, setRecording] = useState(false)
   const recorderRef = useRef(null)
   const chunksRef = useRef([])
 
   async function start() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    })
     const mimeType = CANDIDATES.find(
       (t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t),
     )
-    const recorder = mimeType
-      ? new MediaRecorder(stream, { mimeType })
-      : new MediaRecorder(stream)
+    const opts = { audioBitsPerSecond: 128000 }
+    if (mimeType) opts.mimeType = mimeType
+    const recorder = new MediaRecorder(stream, opts)
     chunksRef.current = []
     recorder.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data)
-    recorder.start()
     recorderRef.current = recorder
+    // Resolve only when capture has actually begun, so the UI never says
+    // "listening" before the mic is rolling (which clipped first words).
+    await new Promise((resolve) => {
+      recorder.onstart = resolve
+      recorder.start()
+    })
     setRecording(true)
   }
 

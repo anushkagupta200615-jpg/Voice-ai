@@ -147,7 +147,9 @@ export default function App() {
       if (!blob || blob.size < 1000) { setStatus('idle'); return }
       setStatus('thinking')
       try {
-        const text = await transcribe(blob)
+        // Hint STT with the language of the selected voice (hi for Swara).
+        const lang = voiceRef.current.startsWith('hi-') ? 'hi' : 'en'
+        const text = await transcribe(blob, lang)
         if (!text) {
           setError("Didn't catch that — try again or type instead.")
           setStatus('idle')

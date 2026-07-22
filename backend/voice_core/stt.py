@@ -9,8 +9,12 @@ from . import config
 
 class STTProvider(ABC):
     @abstractmethod
-    async def transcribe(self, audio: bytes, mime_type: str = "audio/webm") -> str:
-        """Return the transcript of the given audio bytes."""
+    async def transcribe(
+        self, audio: bytes, mime_type: str = "audio/webm", language: str | None = None
+    ) -> str:
+        """Return the transcript of the given audio bytes. `language` is an
+        optional ISO-639-1 hint (e.g. 'en', 'hi') — providing it prevents
+        wrong-language detection on short clips."""
 
 
 class GroqWhisperSTT(STTProvider):
@@ -18,16 +22,21 @@ class GroqWhisperSTT(STTProvider):
 
     URL = "https://api.groq.com/openai/v1/audio/transcriptions"
 
-    async def transcribe(self, audio: bytes, mime_type: str = "audio/webm") -> str:
+    async def transcribe(
+        self, audio: bytes, mime_type: str = "audio/webm", language: str | None = None
+    ) -> str:
         if not config.GROQ_API_KEY:
             raise RuntimeError("GROQ_API_KEY is not set (needed for STT_PROVIDER=groq)")
         ext = mime_type.split("/")[-1].split(";")[0]
+        data = {"model": "whisper-large-v3-turbo", "response_format": "json"}
+        if language:
+            data["language"] = language
         async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.post(
                 self.URL,
                 headers={"Authorization": f"Bearer {config.GROQ_API_KEY}"},
                 files={"file": (f"audio.{ext}", audio, mime_type)},
-                data={"model": "whisper-large-v3-turbo", "response_format": "json"},
+                data=data,
             )
         resp.raise_for_status()
         return resp.json().get("text", "").strip()
@@ -36,12 +45,15 @@ class GroqWhisperSTT(STTProvider):
 class DeepgramSTT(STTProvider):
     URL = "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true"
 
-    async def transcribe(self, audio: bytes, mime_type: str = "audio/webm") -> str:
+    async def transcribe(
+        self, audio: bytes, mime_type: str = "audio/webm", language: str | None = None
+    ) -> str:
         if not config.DEEPGRAM_API_KEY:
             raise RuntimeError("DEEPGRAM_API_KEY is not set (needed for STT_PROVIDER=deepgram)")
+        url = self.URL + (f"&language={language}" if language else "")
         async with httpx.AsyncClient(timeout=60) as client:
             resp = await client.post(
-                self.URL,
+                url,
                 headers={
                     "Authorization": f"Token {config.DEEPGRAM_API_KEY}",
                     "Content-Type": mime_type,

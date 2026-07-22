@@ -25,12 +25,14 @@ export async function sendChat(message, sessionId) {
   return reply
 }
 
-export async function transcribe(audioBlob) {
+export async function transcribe(audioBlob, language) {
   // Name the file by its real format (webm on Chrome, mp4 on Safari/iPhone)
   // so the STT provider decodes it correctly.
   const ext = (audioBlob.type.match(/audio\/(\w+)/) || [null, 'webm'])[1]
   const form = new FormData()
   form.append('audio', audioBlob, `recording.${ext}`)
+  // Hinting the language stops Whisper mis-detecting it on short clips.
+  if (language) form.append('language', language)
   const resp = await fetch('/api/stt', { method: 'POST', body: form })
   const { text } = await jsonOrThrow(resp)
   return text
